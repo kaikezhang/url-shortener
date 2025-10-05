@@ -204,13 +204,13 @@ describe('UrlShortenerService', () => {
 
   describe('getUrlCount', () => {
     it('should return the correct count of stored URLs', async () => {
-      expect(service.getUrlCount()).toBe(0);
+      expect(await service.getUrlCount()).toBe(0);
 
       await service.createShortUrl('https://example.com/1');
-      expect(service.getUrlCount()).toBe(1);
+      expect(await service.getUrlCount()).toBe(1);
 
       await service.createShortUrl('https://example.com/2');
-      expect(service.getUrlCount()).toBe(2);
+      expect(await service.getUrlCount()).toBe(2);
     });
   });
 
@@ -219,10 +219,10 @@ describe('UrlShortenerService', () => {
       await service.createShortUrl('https://example.com/1');
       await service.createShortUrl('https://example.com/2');
 
-      expect(service.getUrlCount()).toBe(2);
+      expect(await service.getUrlCount()).toBe(2);
 
-      service.clearAll();
-      expect(service.getUrlCount()).toBe(0);
+      await service.clearAll();
+      expect(await service.getUrlCount()).toBe(0);
     });
   });
 });
