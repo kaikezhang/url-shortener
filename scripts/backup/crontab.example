@@ -1,0 +1,44 @@
+# URL Shortener Database Backup Cron Jobs
+#
+# To install this crontab:
+# 1. Edit the paths below to match your installation
+# 2. Run: crontab -e
+# 3. Copy the relevant lines into your crontab
+#
+# Cron format: minute hour day month weekday command
+
+# Daily backup at 2:00 AM
+0 2 * * * /path/to/url-shorter/scripts/backup/backup.sh >> /var/log/url-shortener-backup.log 2>&1
+
+# Hourly backup during business hours (9 AM - 6 PM on weekdays)
+0 9-18 * * 1-5 /path/to/url-shorter/scripts/backup/backup.sh >> /var/log/url-shortener-backup.log 2>&1
+
+# Weekly backup on Sunday at 3:00 AM (for long-term retention)
+0 3 * * 0 /path/to/url-shorter/scripts/backup/backup.sh >> /var/log/url-shortener-backup.log 2>&1
+
+# Every 6 hours (recommended for high-traffic sites)
+0 */6 * * * /path/to/url-shorter/scripts/backup/backup.sh >> /var/log/url-shortener-backup.log 2>&1
+
+# Example with environment file
+# 0 2 * * * cd /path/to/url-shorter && /path/to/url-shorter/scripts/backup/backup.sh >> /var/log/url-shortener-backup.log 2>&1
+
+################################################################################
+# Backup Schedule Recommendations:
+#
+# Low-traffic sites (< 100 URLs/day):
+#   - Daily backups at night
+#   - Keep 7 days of backups
+#
+# Medium-traffic sites (100-1000 URLs/day):
+#   - Every 6 hours
+#   - Keep 7 days of backups
+#
+# High-traffic sites (> 1000 URLs/day):
+#   - Every 2-4 hours
+#   - Keep 3-7 days of backups
+#   - Consider additional database replication
+#
+################################################################################
+
+# Example: Configure backup retention via environment
+# 0 2 * * * export BACKUP_RETENTION_DAYS=14 && /path/to/url-shorter/scripts/backup/backup.sh >> /var/log/url-shortener-backup.log 2>&1

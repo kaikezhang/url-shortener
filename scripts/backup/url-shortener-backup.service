@@ -1,0 +1,31 @@
+[Unit]
+Description=URL Shortener Database Backup
+After=postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=oneshot
+User=postgres
+Group=postgres
+WorkingDirectory=/path/to/url-shorter
+
+# Load environment variables
+EnvironmentFile=/path/to/url-shorter/.env
+
+# Run backup script
+ExecStart=/path/to/url-shorter/scripts/backup/backup.sh
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=url-shortener-backup
+
+# Security settings
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/backups/url-shortener
+
+[Install]
+WantedBy=multi-user.target
