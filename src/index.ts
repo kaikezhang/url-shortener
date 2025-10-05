@@ -1,6 +1,7 @@
 import { createApp } from './app';
 import { config, validateConfig } from './utils/config';
 import { logger } from './utils/logger';
+import { runMigrations, testConnection } from './database';
 
 /**
  * Starts the server
@@ -9,6 +10,17 @@ async function startServer(): Promise<void> {
   try {
     // Validate configuration
     validateConfig();
+
+    // Test database connection
+    logger.info('Testing database connection...');
+    const dbConnected = await testConnection();
+    if (!dbConnected) {
+      throw new Error('Database connection failed');
+    }
+
+    // Run database migrations (auto-create tables)
+    logger.info('Running database migrations...');
+    await runMigrations();
 
     // Create Express app
     const app = createApp();

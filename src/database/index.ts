@@ -4,3 +4,4 @@
  */
 
 export { pool, closePool, testConnection } from './pool';
+export { runMigrations, isDatabaseInitialized } from './migrate';
