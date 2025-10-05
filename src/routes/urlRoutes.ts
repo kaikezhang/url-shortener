@@ -119,6 +119,60 @@ export function createUrlRoutes(urlService: UrlShortenerService): Router {
     });
   });
 
+  /**
+   * GET /api/metrics
+   * Application metrics endpoint for monitoring
+   */
+  router.get('/metrics', async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const urlService = req.app.locals.urlService;
+      const memoryUsage = process.memoryUsage();
+      const uptime = process.uptime();
+
+      // Get basic stats from database
+      const statsQuery = `
+        SELECT
+          COUNT(*) as total_urls,
+          SUM(clicks) as total_clicks,
+          COUNT(CASE WHEN created_at >= CURRENT_DATE THEN 1 END) as urls_created_today,
+          COUNT(CASE WHEN created_at >= CURRENT_DATE - INTERVAL '7 days' THEN 1 END) as urls_created_this_week,
+          SUM(CASE WHEN updated_at >= CURRENT_DATE THEN clicks ELSE 0 END) as clicks_today,
+          SUM(CASE WHEN updated_at >= CURRENT_DATE - INTERVAL '7 days' THEN clicks ELSE 0 END) as clicks_this_week
+        FROM urls
+      `;
+
+      const pool = require('../database').pool;
+      const result = await pool.query(statsQuery);
+      const stats = result.rows[0];
+
+      res.json({
+        urls: {
+          total: parseInt(stats.total_urls, 10),
+          created_today: parseInt(stats.urls_created_today, 10),
+          created_this_week: parseInt(stats.urls_created_this_week, 10),
+        },
+        clicks: {
+          total: parseInt(stats.total_clicks || 0, 10),
+          today: parseInt(stats.clicks_today || 0, 10),
+          this_week: parseInt(stats.clicks_this_week || 0, 10),
+        },
+        performance: {
+          uptime_seconds: Math.floor(uptime),
+          memory_usage_mb: Math.round(memoryUsage.heapUsed / 1024 / 1024 * 100) / 100,
+          memory_total_mb: Math.round(memoryUsage.heapTotal / 1024 / 1024 * 100) / 100,
+        },
+        database: {
+          status: 'connected',
+          pool_size: pool.totalCount || 0,
+          active_connections: pool.idleCount || 0,
+        },
+        timestamp: new Date().toISOString(),
+      });
+    } catch (error) {
+      next(error);
+    }
+  });
+
   return router;
 }
 
