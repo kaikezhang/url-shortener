@@ -2,6 +2,10 @@
 
 Complete guide for deploying the URL Shortener service to Railway with PostgreSQL.
 
+## 🌐 Live Demo
+
+**Production URL:** [https://short-url-production-237f.up.railway.app](https://short-url-production-237f.up.railway.app)
+
 ## 🚀 Quick Setup
 
 ### Step 1: Create Railway Project

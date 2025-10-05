@@ -409,7 +409,21 @@ RATE_LIMIT_WINDOW_MS=900000  # 15 minutes
 RATE_LIMIT_MAX_REQUESTS=100  # 100 requests per window
 ```
 
+## Documentation
+
+- **[API Reference](./API.md)** - Complete API documentation
+- **[Database Setup](./DATABASE.md)** - PostgreSQL configuration guide
+- **[Deployment Guide](./DEPLOYMENT.md)** - General deployment instructions
+- **[Railway Deployment](./RAILWAY.md)** - Railway-specific deployment guide
+- **[Contributing](./CONTRIBUTING.md)** - Development and contribution guidelines
+
 ## Production Deployment
+
+### Railway (Recommended)
+
+For quick deployment, use Railway. See [RAILWAY.md](./RAILWAY.md) for detailed instructions.
+
+**Live Demo:** [https://short-url-production-237f.up.railway.app](https://short-url-production-237f.up.railway.app)
 
 ### Docker
 
@@ -439,6 +453,15 @@ pm2 start dist/index.js --name url-shortener
 
 ### Considerations for Production
 
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for comprehensive deployment instructions including:
+- Docker, PM2, and Kubernetes deployment options
+- CI/CD integration examples
+- Database setup and migration
+- Security best practices
+- Monitoring and logging
+- Rollback procedures
+
+**Key Recommendations:**
 - **Database**: Configure proper connection pooling and enable SSL for PostgreSQL connections
 - **Distributed Systems**: Use Redis for distributed rate limiting across multiple instances
 - **Monitoring**: Add APM tools (New Relic, DataDog) and database monitoring
