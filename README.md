@@ -281,11 +281,17 @@ Common error codes:
 # Development server with auto-reload
 npm run dev
 
+# Staging server (requires .env.staging)
+npm run dev:staging
+
 # Build for production
 npm run build
 
 # Start production server
 npm start
+
+# Start staging server
+npm run start:staging
 
 # Run tests
 npm test
@@ -413,6 +419,7 @@ RATE_LIMIT_MAX_REQUESTS=100  # 100 requests per window
 
 - **[API Reference](./API.md)** - Complete API documentation
 - **[Database Setup](./DATABASE.md)** - PostgreSQL configuration guide
+- **[Staging Environment](./STAGING.md)** - Staging setup and testing guide
 - **[Deployment Guide](./DEPLOYMENT.md)** - General deployment instructions
 - **[Railway Deployment](./RAILWAY.md)** - Railway-specific deployment guide
 - **[Contributing](./CONTRIBUTING.md)** - Development and contribution guidelines

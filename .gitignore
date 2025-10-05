@@ -6,6 +6,9 @@ dist/
 
 # Environment variables
 .env
+.env.local
+.env.staging
+.env.production
 
 # Test coverage
 coverage/
