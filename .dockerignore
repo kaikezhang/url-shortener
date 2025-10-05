@@ -10,6 +10,7 @@ dist
 **/*.test.ts
 **/*.spec.ts
 coverage
+test-db.ts
 
 # Development files
 .env
