@@ -59,7 +59,7 @@ describe('UrlShortenerService', () => {
 
       it('should accept valid custom short codes', async () => {
         const url = 'https://example.com';
-        const customCode = 'mycode';
+        const customCode = 'valid-code';
 
         const result = await service.createShortUrl(url, customCode);
 
@@ -77,7 +77,7 @@ describe('UrlShortenerService', () => {
 
       it('should reject duplicate custom short codes', async () => {
         const url = 'https://example.com';
-        const customCode = 'mycode';
+        const customCode = 'duplicate-test';
 
         await service.createShortUrl(url, customCode);
         await expect(service.createShortUrl(url, customCode)).rejects.toThrow(

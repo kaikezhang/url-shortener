@@ -28,7 +28,8 @@ afterEach(async () => {
     // Clean up all test data
     await pool.query('TRUNCATE TABLE urls RESTART IDENTITY CASCADE');
   } catch (error) {
-    // Ignore errors if table doesn't exist
+    // Log errors but don't fail tests if cleanup fails
+    logger.warn('Failed to truncate database in afterEach', { error });
   }
 });
 
