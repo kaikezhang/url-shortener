@@ -27,16 +27,11 @@ WORKDIR /app
 # Copy package files
 COPY package*.json ./
 
-# Install all dependencies (needed for migrations with ts-node)
-RUN npm ci
+# Install production dependencies only
+RUN npm ci --only=production
 
 # Copy built files from builder stage
 COPY --from=builder /app/dist ./dist
-
-# Copy migration source files (needed for ts-node migrations)
-COPY src/database ./src/database
-COPY src/utils ./src/utils
-COPY tsconfig.json ./
 
 # Copy docker entrypoint script
 COPY docker-entrypoint.sh ./
@@ -59,7 +54,7 @@ EXPOSE 3000
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
   CMD node -e "require('http').get('http://localhost:3000/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"
 
-# Set entrypoint to run migrations before starting app
+# Set entrypoint to check database before starting app
 ENTRYPOINT ["./docker-entrypoint.sh"]
 
 # Start the application
