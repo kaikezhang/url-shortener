@@ -131,6 +131,42 @@ describe('URL Shortener API', () => {
     });
   });
 
+  describe('GET /api/metrics', () => {
+    it('should return application metrics', async () => {
+      // Create a URL first to have some data
+      await request(app)
+        .post('/api/shorten')
+        .send({ url: 'https://example.com' });
+
+      const response = await request(app).get('/api/metrics');
+
+      expect(response.status).toBe(200);
+      expect(response.body).toHaveProperty('urls');
+      expect(response.body.urls).toHaveProperty('total');
+      expect(response.body.urls).toHaveProperty('created_today');
+      expect(response.body.urls).toHaveProperty('created_this_week');
+
+      expect(response.body).toHaveProperty('clicks');
+      expect(response.body.clicks).toHaveProperty('total');
+      expect(response.body.clicks).toHaveProperty('today');
+      expect(response.body.clicks).toHaveProperty('this_week');
+
+      expect(response.body).toHaveProperty('performance');
+      expect(response.body.performance).toHaveProperty('uptime_seconds');
+      expect(response.body.performance).toHaveProperty('memory_usage_mb');
+      expect(response.body.performance).toHaveProperty('memory_total_mb');
+
+      expect(response.body).toHaveProperty('database');
+      expect(response.body.database).toHaveProperty('status');
+      expect(response.body.database.status).toBe('connected');
+
+      expect(response.body).toHaveProperty('timestamp');
+
+      // Verify we have at least 1 URL
+      expect(response.body.urls.total).toBeGreaterThanOrEqual(1);
+    });
+  });
+
   describe('404 handling', () => {
     it('should return 404 for non-existent routes', async () => {
       const response = await request(app).get('/api/nonexistent');
