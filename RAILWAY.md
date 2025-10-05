@@ -58,19 +58,14 @@ npm install && npm run build
 
 **Start Command:**
 ```bash
-npm run start:migrate
+npm start
 ```
-
-This will:
-1. Run database migrations
-2. Start the application
 
 ### Step 5: Deploy
 
 Click **"Deploy"** or push to your main branch. Railway will automatically:
 1. Build your application
-2. Run migrations
-3. Start the server
+2. Start the server
 
 ## 🔍 Verify Deployment
 
@@ -80,12 +75,7 @@ In Railway → **Deployments** → Click latest deployment → **View Logs**
 
 You should see:
 ```
-[INFO] Starting migrations...
-[INFO] Migrations table ensured
-[INFO] Found 1 pending migration(s)
-[INFO] Running migration: 001_create_urls_table
-[INFO] Migration completed: 001_create_urls_table
-[INFO] All migrations completed successfully
+Database connected successfully
 Server listening on port 3000
 ```
 
@@ -181,8 +171,7 @@ Railway auto-deploys when you push to main:
 # Railway automatically:
 # 1. Detects the push
 # 2. Builds the new version
-# 3. Runs migrations
-# 4. Deploys the app
+# 3. Deploys the app
 ```
 
 ### Manual Deployment
@@ -197,27 +186,6 @@ railway up
 ```
 
 ## 🔧 Troubleshooting
-
-### Migrations Not Running
-
-**Check logs for errors:**
-```bash
-railway logs --tail 100
-```
-
-**Common issues:**
-
-1. **Database not ready:**
-   - Ensure PostgreSQL service is running
-   - Check Variables are correctly mapped
-
-2. **Permission errors:**
-   - Verify `DB_USER` has CREATE permissions
-   - Check `DB_PASSWORD` is correct
-
-3. **Migration timeout:**
-   - Railway has a 10-minute startup timeout
-   - Ensure migrations complete within this time
 
 ### Connection Errors
 
@@ -315,18 +283,6 @@ railway run psql $DATABASE_URL < backup_20251005.sql
 2. Find previous working deployment
 3. Click **"Redeploy"**
 
-### Rollback Migration
-
-```bash
-# Option 1: Use Railway CLI
-railway run npm run migrate:down
-
-# Option 2: Connect to database and run manually
-railway connect postgres
-DELETE FROM migrations WHERE name = 'problematic_migration';
-\q
-```
-
 ## 📈 Scaling
 
 ### Vertical Scaling (Increase Resources)
@@ -339,17 +295,7 @@ DELETE FROM migrations WHERE name = 'problematic_migration';
 Railway supports horizontal scaling:
 1. Go to **Settings** → **Deploy**
 2. Set **"Replicas"** to desired count
-
-**⚠️ Important for multiple instances:**
-Add this environment variable:
-```env
-SKIP_MIGRATIONS=true
-```
-
-Then run migrations manually before scaling:
-```bash
-railway run npm run migrate:up
-```
+3. Railway will automatically load balance across instances
 
 ## 🔗 Connecting to Database Directly
 
@@ -369,17 +315,17 @@ railway variables
 psql "postgresql://<user>:<password>@<host>:<port>/<database>"
 ```
 
-### Viewing Migrations
+### Viewing Database Data
 
 ```sql
--- Check executed migrations
-SELECT * FROM migrations ORDER BY id DESC;
-
 -- Check urls table
 SELECT * FROM urls LIMIT 10;
 
 -- Check table structure
 \d urls
+
+-- Count total URLs
+SELECT COUNT(*) FROM urls;
 ```
 
 ## 📚 Additional Resources
@@ -394,9 +340,9 @@ SELECT * FROM urls LIMIT 10;
 - [ ] PostgreSQL service added and running
 - [ ] All environment variables configured
 - [ ] Build command set to `npm install && npm run build`
-- [ ] Start command set to `npm run start:migrate`
+- [ ] Start command set to `npm start`
 - [ ] First deployment successful
-- [ ] Migrations executed (check logs)
+- [ ] Database connection verified (check logs)
 - [ ] Health check endpoint returns 200
 - [ ] Can create and retrieve short URLs
 - [ ] Custom domain configured (if needed)

@@ -7,12 +7,9 @@
     "dev": "nodemon src/index.ts",
     "build": "tsc",
     "start": "node dist/index.js",
-    "start:migrate": "npm run migrate:up && npm start",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage",
-    "migrate:up": "ts-node src/database/migrate.ts up",
-    "migrate:down": "ts-node src/database/migrate.ts down"
+    "test:coverage": "jest --coverage"
   },
   "keywords": [],
   "author": "",
