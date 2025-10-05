@@ -1,6 +1,13 @@
 # URL Shortener Service
 
+[![Live Demo](https://img.shields.io/badge/demo-live-success?style=for-the-badge)](https://short-url-production-237f.up.railway.app)
+[![Deploy on Railway](https://img.shields.io/badge/Deploy%20on-Railway-0B0D0E?style=for-the-badge&logo=railway&logoColor=white)](https://railway.app)
+[![TypeScript](https://img.shields.io/badge/TypeScript-007ACC?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![Tests](https://img.shields.io/badge/tests-passing-brightgreen?style=for-the-badge)]()
+
 A production-ready URL shortener service built with Node.js, TypeScript, and Express. Features clean, readable code with comprehensive tests and optional enhancements controlled by feature flags.
+
+**🚀 Live Demo:** [https://short-url-production-237f.up.railway.app](https://short-url-production-237f.up.railway.app)
 
 ## Features
 
