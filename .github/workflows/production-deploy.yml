@@ -19,6 +19,21 @@ jobs:
       name: production
       url: https://short-url-production-237f.up.railway.app
 
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: url_shortener_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,7 +50,17 @@ jobs:
       - name: Run tests
         env:
           NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: url_shortener_test
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_POOL_MIN: 2
+          DB_POOL_MAX: 10
           BASE_URL: http://localhost:3000
+          ENABLE_ANALYTICS: true
+          ENABLE_CUSTOM_CODES: true
+          ENABLE_RATE_LIMITING: false
         run: npm test
 
       - name: Build application
