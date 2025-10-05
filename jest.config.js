@@ -9,7 +9,12 @@ module.exports = {
     '!src/**/*.d.ts',
     '!src/**/*.test.ts',
     '!src/**/__tests__/**',
-    '!src/setupTests.ts'
+    '!src/setupTests.ts',
+    // Exclude infrastructure/initialization code
+    '!src/index.ts',
+    '!src/database/redis.ts',
+    '!src/database/pool.ts',
+    '!src/database/migrate.ts'
   ],
   coverageThreshold: {
     global: {
