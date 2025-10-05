@@ -39,18 +39,21 @@ export const pool = new Pool(poolConfig);
 
 /**
  * Event handlers for pool monitoring
+ * Only enable in non-test environments to avoid Jest logging issues
  */
-pool.on('connect', () => {
-  logger.info('New client connected to database pool');
-});
+if (config.nodeEnv !== 'test') {
+  pool.on('connect', () => {
+    logger.info('New client connected to database pool');
+  });
 
-pool.on('error', (err) => {
-  logger.error('Unexpected error on idle database client', errorToObject(err));
-});
+  pool.on('error', (err) => {
+    logger.error('Unexpected error on idle database client', errorToObject(err));
+  });
 
-pool.on('remove', () => {
-  logger.info('Client removed from database pool');
-});
+  pool.on('remove', () => {
+    logger.info('Client removed from database pool');
+  });
+}
 
 /**
  * Gracefully closes all connections in the pool

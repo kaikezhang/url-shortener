@@ -41,6 +41,7 @@ export function createApp(): Application {
         analytics: 'GET /api/analytics/:shortCode',
         delete: 'DELETE /api/urls/:shortCode',
         health: 'GET /api/health',
+        metrics: 'GET /api/metrics',
       },
       features: config.features,
     });
