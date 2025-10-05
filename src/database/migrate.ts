@@ -15,6 +15,20 @@ export interface Migration {
 }
 
 /**
+ * Converts an unknown error to a loggable object
+ */
+function errorToObject(error: unknown): object {
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+    };
+  }
+  return { error: String(error) };
+}
+
+/**
  * Creates the migrations tracking table if it doesn't exist
  */
 async function createMigrationsTable(): Promise<void> {
@@ -118,7 +132,7 @@ export async function runMigrations(): Promise<void> {
         logger.info(`Migration completed: ${migration.name}`);
       } catch (error) {
         await client.query('ROLLBACK');
-        logger.error(`Migration failed: ${migration.name}`, error);
+        logger.error(`Migration failed: ${migration.name}`, errorToObject(error));
         throw error;
       } finally {
         client.release();
@@ -127,7 +141,7 @@ export async function runMigrations(): Promise<void> {
 
     logger.info('All migrations completed successfully');
   } catch (error) {
-    logger.error('Migration process failed', error);
+    logger.error('Migration process failed', errorToObject(error));
     throw error;
   }
 }
@@ -167,13 +181,13 @@ export async function rollbackMigration(): Promise<void> {
       logger.info(`Rollback completed: ${migration.name}`);
     } catch (error) {
       await client.query('ROLLBACK');
-      logger.error(`Rollback failed: ${migration.name}`, error);
+      logger.error(`Rollback failed: ${migration.name}`, errorToObject(error));
       throw error;
     } finally {
       client.release();
     }
   } catch (error) {
-    logger.error('Rollback process failed', error);
+    logger.error('Rollback process failed', errorToObject(error));
     throw error;
   }
 }

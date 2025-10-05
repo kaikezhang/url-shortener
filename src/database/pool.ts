@@ -3,6 +3,20 @@ import { config } from '../utils/config';
 import { logger } from '../utils/logger';
 
 /**
+ * Converts an error to a loggable object
+ */
+function errorToObject(error: unknown): object {
+  if (error instanceof Error) {
+    return {
+      message: error.message,
+      name: error.name,
+      stack: error.stack,
+    };
+  }
+  return { error: String(error) };
+}
+
+/**
  * PostgreSQL connection pool configuration
  */
 const poolConfig: PoolConfig = {
@@ -31,7 +45,7 @@ pool.on('connect', () => {
 });
 
 pool.on('error', (err) => {
-  logger.error('Unexpected error on idle database client', err);
+  logger.error('Unexpected error on idle database client', errorToObject(err));
 });
 
 pool.on('remove', () => {
@@ -57,7 +71,7 @@ export async function testConnection(): Promise<boolean> {
     logger.info('Database connection test successful');
     return true;
   } catch (error) {
-    logger.error('Database connection test failed', error);
+    logger.error('Database connection test failed', errorToObject(error));
     return false;
   }
 }
