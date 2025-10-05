@@ -109,11 +109,12 @@ export function createUrlRoutes(urlService: UrlShortenerService): Router {
    * GET /api/health
    * Health check endpoint
    */
-  router.get('/health', (req: Request, res: Response): void => {
+  router.get('/health', async (req: Request, res: Response): Promise<void> => {
+    const urlCount = await urlService.getUrlCount();
     res.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
-      urlCount: urlService.getUrlCount(),
+      urlCount,
       features: config.features,
     });
   });

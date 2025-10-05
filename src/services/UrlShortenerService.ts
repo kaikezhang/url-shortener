@@ -2,21 +2,19 @@ import { customAlphabet } from 'nanoid';
 import { UrlEntry, UrlAnalytics, UrlShortenerConfig } from '../types';
 import { isValidUrl, isValidShortCode } from '../utils/validator';
 import { logger } from '../utils/logger';
+import { pool } from '../database';
 
 /**
  * Core URL Shortener Service
  * Handles creation, storage, and retrieval of shortened URLs
  */
 export class UrlShortenerService {
-  // In-memory storage (use Redis or database in production)
-  private urlStore: Map<string, UrlEntry>;
   private config: UrlShortenerConfig;
 
   // Custom alphabet for nanoid (URL-safe characters)
   private generateId: () => string;
 
   constructor(config: UrlShortenerConfig) {
-    this.urlStore = new Map();
     this.config = config;
 
     // Create custom ID generator with URL-safe characters
@@ -52,7 +50,13 @@ export class UrlShortenerService {
         throw new Error('Invalid custom short code. Must be 3-20 alphanumeric characters, hyphens, or underscores');
       }
 
-      if (this.urlStore.has(customCode)) {
+      // Check if custom code already exists
+      const existing = await pool.query(
+        'SELECT short_code FROM urls WHERE short_code = $1',
+        [customCode]
+      );
+
+      if (existing.rows.length > 0) {
         throw new Error('Custom short code already exists');
       }
 
@@ -64,16 +68,19 @@ export class UrlShortenerService {
       logger.debug('Generated short code', { shortCode, originalUrl });
     }
 
-    // Create URL entry
-    const urlEntry: UrlEntry = {
-      shortCode,
-      originalUrl,
-      createdAt: new Date(),
-      accessCount: 0,
-    };
+    // Insert into database
+    const result = await pool.query(
+      'INSERT INTO urls (short_code, original_url, clicks) VALUES ($1, $2, $3) RETURNING *',
+      [shortCode, originalUrl, 0]
+    );
 
-    // Store in map
-    this.urlStore.set(shortCode, urlEntry);
+    const row = result.rows[0];
+    const urlEntry: UrlEntry = {
+      shortCode: row.short_code,
+      originalUrl: row.original_url,
+      createdAt: row.created_at,
+      accessCount: row.clicks,
+    };
 
     logger.info('Short URL created', { shortCode, originalUrl });
     return urlEntry;
@@ -85,21 +92,48 @@ export class UrlShortenerService {
    * @returns The URL entry if found, null otherwise
    */
   async getOriginalUrl(shortCode: string): Promise<UrlEntry | null> {
-    const urlEntry = this.urlStore.get(shortCode);
-
-    if (!urlEntry) {
-      logger.debug('Short code not found', { shortCode });
-      return null;
-    }
-
     // Increment access count if analytics enabled
     if (this.config.enableAnalytics) {
-      urlEntry.accessCount++;
-      urlEntry.lastAccessedAt = new Date();
-      logger.debug('Updated analytics', { shortCode, accessCount: urlEntry.accessCount });
-    }
+      const result = await pool.query(
+        'UPDATE urls SET clicks = clicks + 1, updated_at = CURRENT_TIMESTAMP WHERE short_code = $1 RETURNING *',
+        [shortCode]
+      );
 
-    return urlEntry;
+      if (result.rows.length === 0) {
+        logger.debug('Short code not found', { shortCode });
+        return null;
+      }
+
+      const row = result.rows[0];
+      logger.debug('Updated analytics', { shortCode, accessCount: row.clicks });
+
+      return {
+        shortCode: row.short_code,
+        originalUrl: row.original_url,
+        createdAt: row.created_at,
+        accessCount: row.clicks,
+        lastAccessedAt: row.updated_at,
+      };
+    } else {
+      // Just fetch without updating
+      const result = await pool.query(
+        'SELECT * FROM urls WHERE short_code = $1',
+        [shortCode]
+      );
+
+      if (result.rows.length === 0) {
+        logger.debug('Short code not found', { shortCode });
+        return null;
+      }
+
+      const row = result.rows[0];
+      return {
+        shortCode: row.short_code,
+        originalUrl: row.original_url,
+        createdAt: row.created_at,
+        accessCount: row.clicks,
+      };
+    }
   }
 
   /**
@@ -112,18 +146,22 @@ export class UrlShortenerService {
       throw new Error('Analytics feature is not enabled');
     }
 
-    const urlEntry = this.urlStore.get(shortCode);
+    const result = await pool.query(
+      'SELECT * FROM urls WHERE short_code = $1',
+      [shortCode]
+    );
 
-    if (!urlEntry) {
+    if (result.rows.length === 0) {
       return null;
     }
 
+    const row = result.rows[0];
     return {
-      shortCode: urlEntry.shortCode,
-      originalUrl: urlEntry.originalUrl,
-      accessCount: urlEntry.accessCount,
-      createdAt: urlEntry.createdAt,
-      lastAccessedAt: urlEntry.lastAccessedAt,
+      shortCode: row.short_code,
+      originalUrl: row.original_url,
+      accessCount: row.clicks,
+      createdAt: row.created_at,
+      lastAccessedAt: row.updated_at,
     };
   }
 
@@ -133,7 +171,12 @@ export class UrlShortenerService {
    * @returns True if deleted, false if not found
    */
   async deleteShortUrl(shortCode: string): Promise<boolean> {
-    const deleted = this.urlStore.delete(shortCode);
+    const result = await pool.query(
+      'DELETE FROM urls WHERE short_code = $1 RETURNING *',
+      [shortCode]
+    );
+
+    const deleted = result.rows.length > 0;
 
     if (deleted) {
       logger.info('Short URL deleted', { shortCode });
@@ -161,7 +204,17 @@ export class UrlShortenerService {
         logger.error('Failed to generate unique short code', { attempts });
         throw new Error('Failed to generate unique short code');
       }
-    } while (this.urlStore.has(shortCode));
+
+      // Check if short code exists in database
+      const result = await pool.query(
+        'SELECT short_code FROM urls WHERE short_code = $1',
+        [shortCode]
+      );
+
+      if (result.rows.length === 0) {
+        break;
+      }
+    } while (true);
 
     return shortCode;
   }
@@ -170,15 +223,16 @@ export class UrlShortenerService {
    * Gets total number of stored URLs
    * @returns Count of URLs in storage
    */
-  getUrlCount(): number {
-    return this.urlStore.size;
+  async getUrlCount(): Promise<number> {
+    const result = await pool.query('SELECT COUNT(*) FROM urls');
+    return parseInt(result.rows[0].count, 10);
   }
 
   /**
    * Clears all stored URLs (useful for testing)
    */
-  clearAll(): void {
-    this.urlStore.clear();
+  async clearAll(): Promise<void> {
+    await pool.query('DELETE FROM urls');
     logger.warn('All URLs cleared from storage');
   }
 }
