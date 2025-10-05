@@ -1,0 +1,110 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      reason:
+        description: 'Reason for manual deployment'
+        required: false
+        default: 'Manual deployment'
+
+jobs:
+  deploy-production:
+    name: Deploy to Production Environment
+    runs-on: ubuntu-latest
+    environment:
+      name: production
+      url: https://short-url-production-237f.up.railway.app
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        env:
+          NODE_ENV: test
+          BASE_URL: http://localhost:3000
+        run: npm test
+
+      - name: Build application
+        run: npm run build
+
+      - name: Verify build
+        run: |
+          echo "Checking build artifacts..."
+          ls -la dist/
+          test -f dist/index.js || exit 1
+          echo "✅ Build verified!"
+
+      - name: Notify deployment start
+        run: |
+          echo "🚀 Deploying to production..."
+          echo "Branch: main"
+          echo "Environment: production"
+          echo "URL: https://short-url-production-237f.up.railway.app"
+
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "Reason: ${{ github.event.inputs.reason }}"
+          fi
+
+      # Railway automatically deploys on push to main branch
+      # This workflow validates the build and runs tests before Railway deploys
+
+      - name: Wait for Railway deployment
+        run: |
+          echo "⏳ Waiting for Railway to complete deployment (90s)..."
+          sleep 90
+
+      - name: Run production smoke tests
+        run: |
+          echo "🧪 Running smoke tests against production..."
+
+          # Health check
+          echo "Testing health endpoint..."
+          HEALTH_RESPONSE=$(curl -sf https://short-url-production-237f.up.railway.app/api/health)
+          echo "$HEALTH_RESPONSE" | jq '.' || exit 1
+
+          # Verify status is healthy
+          STATUS=$(echo "$HEALTH_RESPONSE" | jq -r '.status')
+          if [ "$STATUS" != "healthy" ]; then
+            echo "❌ Health check failed: status is $STATUS"
+            exit 1
+          fi
+
+          echo "✅ Production health check passed!"
+
+      - name: Deployment successful
+        run: |
+          echo "✅ Production deployment successful!"
+          echo "URL: https://short-url-production-237f.up.railway.app"
+          echo ""
+          echo "Deployment completed at: $(date)"
+          echo ""
+          echo "⚠️  Post-deployment checklist:"
+          echo "1. Monitor Railway logs for errors"
+          echo "2. Check application metrics"
+          echo "3. Verify database migrations ran successfully"
+          echo "4. Test key functionality manually if needed"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Production deployment failed!"
+          echo "Please check the logs and consider rolling back if necessary."
+          echo ""
+          echo "Rollback instructions:"
+          echo "1. Go to Railway dashboard"
+          echo "2. Find previous working deployment"
+          echo "3. Click 'Redeploy'"
