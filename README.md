@@ -19,6 +19,94 @@ A production-ready URL shortener service built with Node.js, TypeScript, and Exp
 - **Custom Short Codes** (`ENABLE_CUSTOM_CODES`): Allow users to specify custom short codes
 - **Rate Limiting** (`ENABLE_RATE_LIMITING`): Prevent abuse with configurable rate limits
 
+## Architecture
+
+```mermaid
+graph TB
+    Client[Client/Browser]
+
+    subgraph "Express Application"
+        API[API Layer]
+
+        subgraph "Middleware"
+            RateLimit[Rate Limiter<br/>Optional]
+            ErrorHandler[Error Handler]
+        end
+
+        subgraph "Routes"
+            CreateRoute[POST /api/shorten]
+            RedirectRoute[GET /:shortCode]
+            AnalyticsRoute[GET /api/analytics/:shortCode]
+            DeleteRoute[DELETE /api/urls/:shortCode]
+            HealthRoute[GET /api/health]
+        end
+
+        subgraph "Business Logic"
+            Service[UrlShortenerService]
+            Validator[Validator Utils]
+            Logger[Logger]
+        end
+
+        subgraph "Storage"
+            Store[(In-Memory Map<br/>shortCode → URL)]
+        end
+    end
+
+    Client -->|HTTP Request| API
+    API --> RateLimit
+    RateLimit --> CreateRoute
+    RateLimit --> RedirectRoute
+    RateLimit --> AnalyticsRoute
+    RateLimit --> DeleteRoute
+    RateLimit --> HealthRoute
+
+    CreateRoute --> Service
+    RedirectRoute --> Service
+    AnalyticsRoute --> Service
+    DeleteRoute --> Service
+
+    Service --> Validator
+    Service --> Logger
+    Service --> Store
+
+    CreateRoute -.->|Error| ErrorHandler
+    RedirectRoute -.->|Error| ErrorHandler
+    AnalyticsRoute -.->|Error| ErrorHandler
+    DeleteRoute -.->|Error| ErrorHandler
+
+    ErrorHandler -->|JSON Response| Client
+    RedirectRoute -->|301 Redirect| Client
+    CreateRoute -->|201 Created| Client
+    AnalyticsRoute -->|200 OK| Client
+    DeleteRoute -->|204 No Content| Client
+    HealthRoute -->|200 OK| Client
+
+    style Service fill:#e1f5ff
+    style Store fill:#fff4e1
+    style RateLimit fill:#f0f0f0
+    style ErrorHandler fill:#ffe1e1
+```
+
+### Component Overview
+
+| Component | Description |
+|-----------|-------------|
+| **API Layer** | Express server handling HTTP requests |
+| **Rate Limiter** | Optional middleware for request throttling (feature flag) |
+| **Routes** | Endpoint handlers for URL operations |
+| **UrlShortenerService** | Core business logic for URL shortening |
+| **Validator** | Input validation and sanitization |
+| **Logger** | Structured logging for monitoring |
+| **Storage** | In-memory Map (replace with Redis/DB for production) |
+| **Error Handler** | Centralized error handling and formatting |
+
+### Request Flow
+
+1. **Create Short URL**: `Client → Rate Limiter → /api/shorten → Service → Storage → Response`
+2. **Redirect**: `Client → /:shortCode → Service → Storage → 301 Redirect`
+3. **Analytics**: `Client → /api/analytics/:code → Service → Storage → Analytics Data`
+4. **Delete**: `Client → DELETE /api/urls/:code → Service → Storage → 204 Response`
+
 ## Quick Start
 
 ### Prerequisites
