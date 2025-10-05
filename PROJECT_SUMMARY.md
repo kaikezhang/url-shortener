@@ -146,7 +146,7 @@ Total Test Cases:     41 (all passing)
 
 ## Key Design Decisions
 
-1. **In-Memory Storage**: Simple Map for MVP. Production should use Redis/database.
+1. **PostgreSQL Database**: Production-ready persistence with connection pooling.
 2. **Feature Flags**: Enable/disable features via environment variables.
 3. **Separation of Concerns**: Clear separation between routes, services, and utilities.
 4. **Type Safety**: Full TypeScript with strict mode for reliability.
@@ -156,29 +156,29 @@ Total Test Cases:     41 (all passing)
 
 ## Production Considerations
 
-### Current Implementation (MVP)
-- ✅ In-memory storage (Map)
-- ✅ Single instance deployment
+### Current Implementation
+- ✅ PostgreSQL database with connection pooling
+- ✅ Ready for horizontal scaling
 - ✅ Basic rate limiting
-- ✅ File-based logging
+- ✅ Structured logging
 
 ### Production Recommendations
-- 🔄 Replace Map with Redis or PostgreSQL
-- 🔄 Implement distributed rate limiting
+- 🔄 Add Redis caching layer for frequently accessed URLs
+- 🔄 Implement distributed rate limiting with Redis
 - 🔄 Add authentication/authorization
-- 🔄 Use structured logging service (ELK, CloudWatch)
+- 🔄 Use log aggregation service (ELK, CloudWatch)
 - 🔄 Add monitoring and alerting (Prometheus, Grafana)
-- 🔄 Implement caching layer
 - 🔄 Add comprehensive analytics
 - 🔄 Set up CI/CD pipeline
 - 🔄 Use HTTPS in production
 - 🔄 Add input sanitization for XSS prevention
+- 🔄 Enable SSL for database connections
 
 ## Performance Characteristics
 
-- **Throughput**: Capable of handling thousands of requests per second (limited by in-memory storage)
-- **Latency**: Sub-millisecond response times for lookups (in-memory)
-- **Scalability**: Horizontal scaling requires external storage (Redis/DB)
+- **Throughput**: Capable of handling thousands of requests per second
+- **Latency**: Fast lookups with database indexing on short_code
+- **Scalability**: Ready for horizontal scaling with PostgreSQL
 - **Collision Probability**: ~1 in 3.5 trillion with 7-character codes (62^7)
 
 ## Security Features
@@ -203,10 +203,10 @@ Total Test Cases:     41 (all passing)
 
 ## Next Steps / Enhancement Ideas
 
-1. **Persistence Layer**
-   - Integrate PostgreSQL or MongoDB
-   - Add database migrations
-   - Implement connection pooling
+1. **Database Enhancements**
+   - Add Redis caching layer
+   - Implement read replicas for scaling
+   - Enable SSL connections
 
 2. **Enhanced Analytics**
    - Track referrer, user agent, geography

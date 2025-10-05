@@ -55,7 +55,7 @@ graph TB
         end
 
         subgraph "Storage"
-            Store[(In-Memory Map<br/>shortCode → URL)]
+            Store[(PostgreSQL Database)]
         end
     end
 
@@ -104,7 +104,7 @@ graph TB
 | **UrlShortenerService** | Core business logic for URL shortening |
 | **Validator** | Input validation and sanitization |
 | **Logger** | Structured logging for monitoring |
-| **Storage** | In-memory Map (replace with Redis/DB for production) |
+| **Storage** | PostgreSQL database with connection pooling |
 | **Error Handler** | Centralized error handling and formatting |
 
 ### Request Flow
@@ -439,13 +439,14 @@ pm2 start dist/index.js --name url-shortener
 
 ### Considerations for Production
 
-- **Database**: Replace in-memory storage with Redis or a database (PostgreSQL, MongoDB)
+- **Database**: Configure proper connection pooling and enable SSL for PostgreSQL connections
 - **Distributed Systems**: Use Redis for distributed rate limiting across multiple instances
-- **Monitoring**: Add APM tools (New Relic, DataDog)
+- **Monitoring**: Add APM tools (New Relic, DataDog) and database monitoring
 - **Logging**: Use structured logging with services like ELK stack or CloudWatch
 - **HTTPS**: Always use HTTPS in production
 - **Authentication**: Add API authentication for create/delete operations
-- **Analytics**: Consider using a proper analytics database for better insights
+- **Backup**: Set up automated database backups and test restore procedures
+- **Caching**: Consider adding Redis caching for frequently accessed URLs
 
 ## Architecture
 
@@ -459,7 +460,7 @@ pm2 start dist/index.js --name url-shortener
 
 ### Design Decisions
 
-- **In-Memory Storage**: Simple MVP uses a Map. Replace with Redis/database for production.
+- **PostgreSQL Database**: Production-ready persistence with connection pooling and transaction support
 - **Feature Flags**: Enable/disable features without code changes
 - **TypeScript**: Type safety and better developer experience
 - **Separation of Concerns**: Services, routes, middleware, and utilities are clearly separated

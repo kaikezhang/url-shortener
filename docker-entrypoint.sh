@@ -23,18 +23,6 @@ done
 
 echo "✅ Database is ready"
 
-# Run migrations if SKIP_MIGRATIONS is not set
-if [ -z "$SKIP_MIGRATIONS" ]; then
-  echo "🚀 Running database migrations..."
-  npm run migrate:up || {
-    echo "❌ Migration failed!"
-    exit 1
-  }
-  echo "✅ Migrations completed"
-else
-  echo "⚠️  Skipping migrations (SKIP_MIGRATIONS is set)"
-fi
-
 # Start the application
 echo "🎯 Starting application..."
 exec "$@"

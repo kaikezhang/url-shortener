@@ -52,10 +52,8 @@ npm install && npm run build
 
 **Start Command:**
 ```bash
-npm run start:migrate
+npm start
 ```
-
-This ensures database migrations run automatically before starting the app.
 
 > 📚 **For detailed Railway deployment guide**, see [RAILWAY.md](./RAILWAY.md)
 
@@ -180,7 +178,7 @@ Railway is configured to auto-deploy when you push to `main`:
 ### Current Setup
 - **Storage**: PostgreSQL database with connection pooling
 - **Persistence**: All URLs stored in database
-- **Scaling**: Ready for horizontal scaling with proper migration handling
+- **Scaling**: Ready for horizontal scaling
 
 ### Production Upgrades
 
@@ -192,12 +190,7 @@ Railway is configured to auto-deploy when you push to `main`:
 ```
 
 #### 2. Enable Horizontal Scaling
-- Set `SKIP_MIGRATIONS=true` for worker instances
-- Run migrations manually before scaling:
-  ```bash
-  railway run npm run migrate:up
-  ```
-- Railway will load balance automatically
+- Railway will load balance automatically across multiple instances
 
 #### 3. Database Optimization
 - Monitor query performance in PostgreSQL metrics
@@ -243,7 +236,7 @@ Railway is configured to auto-deploy when you push to `main`:
 ## 📝 Next Steps
 
 1. **Test all endpoints** using the commands above
-2. **Verify database migrations** ran successfully (check Railway logs)
+2. **Verify database connection** is working (check Railway logs)
 3. **Enable feature flags** in Railway variables
 4. **Add custom domain** (optional)
 5. **Set up monitoring** (Sentry, LogDNA, etc.)

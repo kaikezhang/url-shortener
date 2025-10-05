@@ -14,15 +14,6 @@ async function testDatabase() {
     process.exit(1);
   }
 
-  // Check migrations table
-  const migrationsResult = await pool.query(
-    'SELECT name, executed_at FROM migrations ORDER BY id'
-  );
-  console.log('✅ Migrations executed:');
-  migrationsResult.rows.forEach((row) => {
-    console.log(`   - ${row.name} (${row.executed_at})`);
-  });
-
   // Check urls table structure
   const tableInfo = await pool.query(`
     SELECT column_name, data_type, is_nullable

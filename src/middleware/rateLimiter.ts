@@ -4,8 +4,8 @@ import { logger } from '../utils/logger';
 import { ApiError } from './errorHandler';
 
 /**
- * Simple in-memory rate limiter
- * In production, use Redis or a dedicated rate limiting service
+ * Simple in-memory rate limiter for request throttling
+ * For distributed systems, consider using Redis-based rate limiting
  */
 class RateLimiter {
   private requests: Map<string, number[]>;
