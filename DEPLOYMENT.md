@@ -342,12 +342,19 @@ curl https://staging.yourapp.com/api/health
 ### 2. **Backup Database Before Major Changes**
 
 ```bash
-# Create backup
+# Use the automated backup script
+./scripts/backup/backup.sh
+
+# Or manually create backup
 pg_dump -U postgres url_shortener > backup_$(date +%Y%m%d_%H%M%S).sql
 
 # Restore if needed
+./scripts/backup/restore.sh latest
+# Or manually restore
 psql -U postgres url_shortener < backup_20251005_120000.sql
 ```
+
+For complete backup documentation, see [BACKUP.md](./BACKUP.md).
 
 ### 3. **Monitor Deployment**
 
@@ -543,7 +550,7 @@ docker stats url-shortener
 
 - [x] Set up staging environment - ✅ Complete (See [STAGING.md](./STAGING.md))
 - [x] Configure CI/CD pipeline - ✅ Complete (See [CI_CD.md](./CI_CD.md))
-- [ ] Set up database backup schedule
+- [x] Set up database backup schedule - ✅ Complete (See [BACKUP.md](./BACKUP.md))
 - [ ] Configure monitoring and alerting
 - [ ] Document rollback procedures for your team
 - [ ] Test disaster recovery procedures

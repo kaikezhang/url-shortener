@@ -1,0 +1,26 @@
+[Unit]
+Description=URL Shortener Database Backup Timer
+Requires=url-shortener-backup.service
+
+[Timer]
+# Run daily at 2:00 AM
+OnCalendar=daily
+OnCalendar=02:00
+
+# For every 6 hours, use this instead:
+# OnCalendar=00/6:00
+
+# For hourly backups, use this:
+# OnCalendar=hourly
+
+# Run backup 5 minutes after boot (if system was down during scheduled time)
+OnBootSec=5min
+
+# Ensure timer persists across reboots
+Persistent=true
+
+# Add some randomization to prevent multiple systems from backing up at exactly the same time
+RandomizedDelaySec=300
+
+[Install]
+WantedBy=timers.target
