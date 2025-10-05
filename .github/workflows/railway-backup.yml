@@ -1,0 +1,58 @@
+name: Railway Database Backup
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  backup-database:
+    name: Backup Railway PostgreSQL Database
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y postgresql-client
+
+      - name: Create backup
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          BACKUP_RETENTION_DAYS: 7
+        run: |
+          # Create backup directory
+          mkdir -p backups/railway
+
+          # Run backup script
+          chmod +x scripts/backup/backup-railway.sh
+          ./scripts/backup/backup-railway.sh
+
+      - name: Upload backup to artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: railway-backup-${{ github.run_number }}
+          path: backups/railway/*.sql.gz
+          retention-days: 7
+
+      - name: Upload to S3 (optional)
+        if: false  # Enable this by setting to true and adding AWS credentials
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REGION: us-east-1
+          S3_BUCKET: your-backup-bucket
+        run: |
+          aws s3 sync backups/railway/ s3://${S3_BUCKET}/railway-backups/ \
+            --exclude "*" \
+            --include "railway_backup_$(date +%Y%m%d)*.sql.gz"
+
+      - name: Notify on failure
+        if: failure()
+        run: |
+          echo "❌ Railway backup failed!"
+          echo "Check the workflow logs for details."

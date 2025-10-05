@@ -5,6 +5,7 @@ This guide covers database backup and restore procedures for the URL Shortener s
 ## Table of Contents
 
 - [Quick Start](#quick-start)
+- [Railway Database Backups](#railway-database-backups)
 - [Automated Setup](#automated-setup)
 - [Manual Setup](#manual-setup)
 - [Backup Scripts](#backup-scripts)
@@ -54,6 +55,190 @@ Or restore from a specific backup file:
 ```bash
 ./scripts/backup/restore.sh url_shortener_20251005_120000.sql.gz
 ```
+
+## Railway Database Backups
+
+If your database is hosted on Railway (managed PostgreSQL), use the Railway-specific backup scripts.
+
+### Option 1: Railway's Built-in Backups (Pro Plan)
+
+Railway Pro plan includes automatic daily backups with point-in-time recovery.
+
+**Access backups:**
+1. Go to Railway dashboard
+2. Select your PostgreSQL database
+3. Click on "Backups" tab
+4. View, download, or restore backups
+
+**Features:**
+- Automatic daily backups
+- Point-in-time recovery
+- 7-day retention (configurable)
+- One-click restore
+
+### Option 2: Automated Remote Backups (All Plans)
+
+Use the Railway backup scripts to create backups from anywhere.
+
+#### Setup Railway Backups
+
+**1. Get your DATABASE_URL:**
+
+```bash
+# Option A: From Railway dashboard
+# Go to PostgreSQL service → Connect → Copy DATABASE_URL
+
+# Option B: Using Railway CLI
+railway login
+railway variables get DATABASE_URL
+```
+
+**2. Add DATABASE_URL to .env:**
+
+```env
+# Railway Database Connection
+DATABASE_URL=postgresql://user:password@host:port/database
+BACKUP_DIR=./backups/railway
+BACKUP_RETENTION_DAYS=7
+```
+
+**3. Run Railway backup:**
+
+```bash
+# Create a backup
+./scripts/backup/backup-railway.sh
+
+# Restore from latest backup
+./scripts/backup/restore-railway.sh latest
+```
+
+#### Automated Railway Backups with GitHub Actions
+
+The project includes a GitHub Actions workflow for automated Railway backups.
+
+**Setup:**
+
+1. **Add DATABASE_URL to GitHub Secrets:**
+   - Go to GitHub repo → Settings → Secrets → Actions
+   - Add new secret: `DATABASE_URL` with your Railway database URL
+
+2. **Enable the workflow:**
+
+   The workflow runs automatically:
+   - Daily at 2 AM UTC
+   - Can be triggered manually
+
+3. **Configure backup storage (optional):**
+
+   Edit `.github/workflows/railway-backup.yml`:
+
+   ```yaml
+   # Store backups in GitHub Artifacts (7 days retention)
+   # OR
+   # Upload to AWS S3 for long-term storage
+   ```
+
+**Workflow features:**
+- ✅ Automated daily backups
+- ✅ Stores backups in GitHub Artifacts (7-day retention)
+- ✅ Optional S3 upload for long-term storage
+- ✅ Manual trigger available
+- ✅ Failure notifications
+
+**Manual trigger:**
+
+```bash
+# Using GitHub CLI
+gh workflow run railway-backup.yml
+
+# Or via GitHub web interface
+# Actions → Railway Database Backup → Run workflow
+```
+
+**Download backup from GitHub:**
+
+```bash
+# List recent workflow runs
+gh run list --workflow=railway-backup.yml
+
+# Download artifacts from a specific run
+gh run download <run-id>
+```
+
+#### Railway Backup Best Practices
+
+**1. Use both Railway and custom backups:**
+   - Railway backups for quick recovery
+   - Custom backups for off-platform redundancy
+
+**2. Test restore regularly:**
+   ```bash
+   # Restore to a different Railway database
+   DATABASE_URL=postgresql://... ./scripts/backup/restore-railway.sh latest
+   ```
+
+**3. Off-site backup storage:**
+   - Enable S3 upload in GitHub Actions
+   - Or manually sync backups to cloud storage
+
+**4. Monitor backup status:**
+   - Check GitHub Actions runs regularly
+   - Set up notifications for workflow failures
+
+**5. Secure your DATABASE_URL:**
+   - Never commit DATABASE_URL to git
+   - Use environment variables or secrets
+   - Rotate credentials if exposed
+
+#### Railway Backup Schedule Examples
+
+**GitHub Actions (daily):**
+```yaml
+schedule:
+  - cron: '0 2 * * *'  # Daily at 2 AM UTC
+```
+
+**GitHub Actions (every 6 hours):**
+```yaml
+schedule:
+  - cron: '0 */6 * * *'  # Every 6 hours
+```
+
+**Local cron (if running on a server):**
+```cron
+# Daily backup
+0 2 * * * cd /path/to/url-shorter && ./scripts/backup/backup-railway.sh >> /var/log/railway-backup.log 2>&1
+
+# Every 6 hours
+0 */6 * * * cd /path/to/url-shorter && ./scripts/backup/backup-railway.sh >> /var/log/railway-backup.log 2>&1
+```
+
+#### Troubleshooting Railway Backups
+
+**Connection failed:**
+```bash
+# Test connection
+psql "$DATABASE_URL" -c '\l'
+
+# Check if DATABASE_URL is set
+echo $DATABASE_URL
+```
+
+**Timeout issues:**
+```bash
+# For large databases, increase timeout
+pg_dump "$DATABASE_URL" --format=plain --no-owner > backup.sql
+```
+
+**Access denied:**
+- Verify DATABASE_URL is correct
+- Check Railway database isn't paused
+- Ensure IP isn't blocked (Railway allows all IPs by default)
+
+**GitHub Actions failing:**
+- Check DATABASE_URL secret is set correctly
+- Verify workflow has necessary permissions
+- Check PostgreSQL client installation step
 
 ## Backup Scripts
 

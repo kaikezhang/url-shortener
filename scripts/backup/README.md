@@ -4,7 +4,23 @@ Automated backup and restore scripts for the URL Shortener PostgreSQL database.
 
 ## Quick Start
 
-### Automated Setup
+### For Railway Databases 🚂
+
+If you're using Railway's managed PostgreSQL:
+
+```bash
+# See Railway-specific guide
+cat RAILWAY.md
+
+# Or create backup directly
+./backup-railway.sh
+```
+
+**[→ Railway Quick Start Guide](./RAILWAY.md)**
+
+### For Self-Hosted Databases
+
+#### Automated Setup
 
 Run the interactive setup wizard:
 
@@ -12,7 +28,7 @@ Run the interactive setup wizard:
 sudo ./setup.sh
 ```
 
-### Manual Backup
+#### Manual Backup
 
 Create a one-time backup:
 
@@ -20,7 +36,7 @@ Create a one-time backup:
 ./backup.sh
 ```
 
-### Restore Database
+#### Restore Database
 
 Restore from the latest backup:
 
@@ -29,6 +45,15 @@ Restore from the latest backup:
 ```
 
 ## Available Scripts
+
+### Railway Database Scripts
+
+| Script | Purpose |
+|--------|---------|
+| `backup-railway.sh` | Backup Railway PostgreSQL database remotely |
+| `restore-railway.sh` | Restore Railway database from backup |
+
+### Self-Hosted Database Scripts
 
 | Script | Purpose |
 |--------|---------|
@@ -43,6 +68,7 @@ Restore from the latest backup:
 | `crontab.example` | Example cron schedules |
 | `url-shortener-backup.service` | Systemd service unit |
 | `url-shortener-backup.timer` | Systemd timer unit |
+| `RAILWAY.md` | Railway database backup quick start guide |
 
 ## Features
 
@@ -54,14 +80,25 @@ Restore from the latest backup:
 - ✅ Integrity verification
 - ✅ Detailed logging
 - ✅ Error handling and rollback
+- ✅ Railway database support
+- ✅ GitHub Actions automation
 
 ## Documentation
 
-For complete documentation, see [BACKUP.md](../../BACKUP.md) in the project root.
+- **[RAILWAY.md](./RAILWAY.md)** - Railway database backup quick start
+- **[BACKUP.md](../../BACKUP.md)** - Complete backup documentation
 
 ## Environment Variables
 
-Configure via `.env` file:
+### For Railway Databases
+
+```env
+DATABASE_URL=postgresql://user:password@host:port/database
+BACKUP_DIR=./backups/railway
+BACKUP_RETENTION_DAYS=7
+```
+
+### For Self-Hosted Databases
 
 ```env
 BACKUP_DIR=/var/backups/url-shortener
@@ -78,10 +115,12 @@ DB_PASSWORD=your_password
 - PostgreSQL client tools (`pg_dump`, `psql`)
 - `gzip` for compression
 - Bash 4.0+
-- Either `cron` or `systemd` for scheduling
+- Either `cron` or `systemd` for scheduling (self-hosted)
+- Railway CLI (optional, for Railway backups)
 
 ## Support
 
 - 📖 [Full Documentation](../../BACKUP.md)
+- 🚂 [Railway Quick Start](./RAILWAY.md)
 - 🚀 [Deployment Guide](../../DEPLOYMENT.md)
 - 🗄️ [Database Guide](../../DATABASE.md)
