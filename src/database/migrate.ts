@@ -24,6 +24,7 @@ CREATE TABLE IF NOT EXISTS urls (
 -- Create indexes for better query performance
 CREATE INDEX IF NOT EXISTS idx_urls_short_code ON urls(short_code);
 CREATE INDEX IF NOT EXISTS idx_urls_created_at ON urls(created_at);
+CREATE INDEX IF NOT EXISTS idx_urls_original_url ON urls(original_url);
 
 -- Create function to update updated_at timestamp
 CREATE OR REPLACE FUNCTION update_updated_at_column()

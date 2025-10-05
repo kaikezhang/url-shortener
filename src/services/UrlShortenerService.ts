@@ -3,6 +3,8 @@ import { UrlEntry, UrlAnalytics, UrlShortenerConfig } from '../types';
 import { isValidUrl, isValidShortCode } from '../utils/validator';
 import { logger } from '../utils/logger';
 import { pool } from '../database';
+import { getCached, setCached, deleteCached } from '../database/redis';
+import { config } from '../utils/config';
 
 /**
  * Core URL Shortener Service
@@ -92,8 +94,27 @@ export class UrlShortenerService {
    * @returns The URL entry if found, null otherwise
    */
   async getOriginalUrl(shortCode: string): Promise<UrlEntry | null> {
-    // Increment access count if analytics enabled
+    // Try cache first (if caching enabled)
+    if (config.features.caching) {
+      const cached = await getCached<UrlEntry>(`url:${shortCode}`);
+      if (cached) {
+        logger.debug('Cache hit', { shortCode });
+
+        // Update analytics asynchronously (don't wait for it)
+        if (this.config.enableAnalytics) {
+          this.incrementClicksAsync(shortCode).catch(err =>
+            logger.error('Failed to update analytics', { shortCode, error: err })
+          );
+        }
+
+        return cached;
+      }
+      logger.debug('Cache miss', { shortCode });
+    }
+
+    // Fetch from database and update analytics if enabled
     if (this.config.enableAnalytics) {
+      // Update and return in one query for analytics mode
       const result = await pool.query(
         'UPDATE urls SET clicks = clicks + 1, updated_at = CURRENT_TIMESTAMP WHERE short_code = $1 RETURNING *',
         [shortCode]
@@ -105,17 +126,23 @@ export class UrlShortenerService {
       }
 
       const row = result.rows[0];
-      logger.debug('Updated analytics', { shortCode, accessCount: row.clicks });
-
-      return {
+      const urlEntry: UrlEntry = {
         shortCode: row.short_code,
         originalUrl: row.original_url,
         createdAt: row.created_at,
         accessCount: row.clicks,
         lastAccessedAt: row.updated_at,
       };
+
+      // Cache the result (with updated analytics)
+      if (config.features.caching) {
+        await setCached(`url:${shortCode}`, urlEntry);
+      }
+
+      logger.debug('Analytics updated', { shortCode, accessCount: row.clicks });
+      return urlEntry;
     } else {
-      // Just fetch without updating
+      // Just fetch without updating (analytics disabled)
       const result = await pool.query(
         'SELECT * FROM urls WHERE short_code = $1',
         [shortCode]
@@ -127,13 +154,33 @@ export class UrlShortenerService {
       }
 
       const row = result.rows[0];
-      return {
+      const urlEntry: UrlEntry = {
         shortCode: row.short_code,
         originalUrl: row.original_url,
         createdAt: row.created_at,
         accessCount: row.clicks,
       };
+
+      // Cache the result
+      if (config.features.caching) {
+        await setCached(`url:${shortCode}`, urlEntry);
+      }
+
+      return urlEntry;
     }
+  }
+
+  /**
+   * Increments click count asynchronously (for analytics)
+   * Does not block the main request flow
+   * @param shortCode - The short code to increment
+   */
+  private async incrementClicksAsync(shortCode: string): Promise<void> {
+    await pool.query(
+      'UPDATE urls SET clicks = clicks + 1, updated_at = CURRENT_TIMESTAMP WHERE short_code = $1',
+      [shortCode]
+    );
+    logger.debug('Analytics updated', { shortCode });
   }
 
   /**
@@ -179,6 +226,10 @@ export class UrlShortenerService {
     const deleted = result.rows.length > 0;
 
     if (deleted) {
+      // Invalidate cache
+      if (config.features.caching) {
+        await deleteCached(`url:${shortCode}`);
+      }
       logger.info('Short URL deleted', { shortCode });
     } else {
       logger.debug('Short code not found for deletion', { shortCode });
@@ -189,34 +240,30 @@ export class UrlShortenerService {
 
   /**
    * Generates a unique short code that doesn't exist in storage
+   * Uses optimized approach with limited retries
    * @returns A unique short code
    */
   private async generateUniqueShortCode(): Promise<string> {
-    let shortCode: string;
-    let attempts = 0;
-    const maxAttempts = 10;
+    const maxAttempts = 5;
 
-    do {
-      shortCode = this.generateId();
-      attempts++;
+    for (let attempts = 0; attempts < maxAttempts; attempts++) {
+      const shortCode = this.generateId();
 
-      if (attempts >= maxAttempts) {
-        logger.error('Failed to generate unique short code', { attempts });
-        throw new Error('Failed to generate unique short code');
-      }
-
-      // Check if short code exists in database
+      // Check if short code exists (single query)
       const result = await pool.query(
-        'SELECT short_code FROM urls WHERE short_code = $1',
+        'SELECT 1 FROM urls WHERE short_code = $1',
         [shortCode]
       );
 
       if (result.rows.length === 0) {
-        break;
+        return shortCode;
       }
-    } while (true);
 
-    return shortCode;
+      logger.debug('Short code collision detected', { shortCode, attempts: attempts + 1 });
+    }
+
+    logger.error('Failed to generate unique short code after retries', { attempts: maxAttempts });
+    throw new Error('Failed to generate unique short code');
   }
 
   /**
