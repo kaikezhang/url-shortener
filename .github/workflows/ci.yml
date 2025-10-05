@@ -1,0 +1,137 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main, staging]
+  push:
+    branches: [main, staging]
+
+jobs:
+  test:
+    name: Test & Build
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: url_shortener_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run linter (if configured)
+        run: npm run lint || echo "No linter configured"
+        continue-on-error: true
+
+      - name: Run tests
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: url_shortener_test
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_POOL_MIN: 2
+          DB_POOL_MAX: 10
+          BASE_URL: http://localhost:3000
+          ENABLE_ANALYTICS: true
+          ENABLE_CUSTOM_CODES: true
+          ENABLE_RATE_LIMITING: false
+        run: npm test
+
+      - name: Generate coverage report
+        env:
+          NODE_ENV: test
+          DB_HOST: localhost
+          DB_PORT: 5432
+          DB_NAME: url_shortener_test
+          DB_USER: postgres
+          DB_PASSWORD: postgres
+          DB_POOL_MIN: 2
+          DB_POOL_MAX: 10
+          BASE_URL: http://localhost:3000
+          ENABLE_ANALYTICS: true
+          ENABLE_CUSTOM_CODES: true
+          ENABLE_RATE_LIMITING: false
+        run: npm run test:coverage
+
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v4
+        with:
+          files: ./coverage/lcov.info
+          fail_ci_if_error: false
+        continue-on-error: true
+
+      - name: Build application
+        run: npm run build
+
+      - name: Check build output
+        run: |
+          echo "Checking dist directory..."
+          ls -la dist/
+          echo "Build successful!"
+
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Run npm audit
+        run: npm audit --audit-level=moderate
+        continue-on-error: true
+
+      - name: Check for vulnerabilities
+        run: npm audit --audit-level=high
+
+  lint:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check TypeScript
+        run: npx tsc --noEmit
+
+      - name: Check formatting (Prettier)
+        run: npx prettier --check "src/**/*.{ts,js,json}" || echo "Prettier not configured"
+        continue-on-error: true

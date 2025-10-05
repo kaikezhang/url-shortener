@@ -420,6 +420,7 @@ RATE_LIMIT_MAX_REQUESTS=100  # 100 requests per window
 - **[API Reference](./API.md)** - Complete API documentation
 - **[Database Setup](./DATABASE.md)** - PostgreSQL configuration guide
 - **[Staging Environment](./STAGING.md)** - Staging setup and testing guide
+- **[CI/CD Pipeline](./CI_CD.md)** - Automated testing and deployment
 - **[Deployment Guide](./DEPLOYMENT.md)** - General deployment instructions
 - **[Railway Deployment](./RAILWAY.md)** - Railway-specific deployment guide
 - **[Contributing](./CONTRIBUTING.md)** - Development and contribution guidelines
