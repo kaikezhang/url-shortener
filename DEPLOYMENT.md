@@ -542,7 +542,7 @@ docker stats url-shortener
 ## Next Steps
 
 - [x] Set up staging environment - ✅ Complete (See [STAGING.md](./STAGING.md))
-- [ ] Configure CI/CD pipeline
+- [x] Configure CI/CD pipeline - ✅ Complete (See [CI_CD.md](./CI_CD.md))
 - [ ] Set up database backup schedule
 - [ ] Configure monitoring and alerting
 - [ ] Document rollback procedures for your team
