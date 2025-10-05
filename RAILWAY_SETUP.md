@@ -7,9 +7,26 @@ Your URL Shortener is deployed on Railway!
 
 ## ⚙️ Environment Variables (Set in Railway Dashboard)
 
+### Prerequisites
+1. **Add PostgreSQL database** to your Railway project:
+   - Click "New" → "Database" → "Add PostgreSQL"
+   - Railway will auto-create the database
+
+### Required Variables
+
 Go to your Railway project → Variables tab and set:
 
 ```bash
+# Database Configuration (map from PostgreSQL service)
+DB_HOST=${{Postgres.PGHOST}}
+DB_PORT=${{Postgres.PGPORT}}
+DB_NAME=${{Postgres.PGDATABASE}}
+DB_USER=${{Postgres.PGUSER}}
+DB_PASSWORD=${{Postgres.PGPASSWORD}}
+DB_POOL_MIN=2
+DB_POOL_MAX=10
+
+# Application Configuration
 NODE_ENV=production
 PORT=3000
 BASE_URL=https://short-url-production-237f.up.railway.app
@@ -23,6 +40,24 @@ ENABLE_RATE_LIMITING=true
 RATE_LIMIT_WINDOW_MS=900000
 RATE_LIMIT_MAX_REQUESTS=100
 ```
+
+### Build & Start Commands
+
+In Settings → Deploy, configure:
+
+**Build Command:**
+```bash
+npm install && npm run build
+```
+
+**Start Command:**
+```bash
+npm run start:migrate
+```
+
+This ensures database migrations run automatically before starting the app.
+
+> 📚 **For detailed Railway deployment guide**, see [RAILWAY.md](./RAILWAY.md)
 
 ## 🧪 Test Your Deployment
 
@@ -142,28 +177,32 @@ Railway is configured to auto-deploy when you push to `main`:
 
 ## 📈 Scaling Considerations
 
-### Current Limitations (MVP)
-- **Storage**: In-memory Map (data lost on restart)
-- **Scaling**: Single instance only
+### Current Setup
+- **Storage**: PostgreSQL database with connection pooling
+- **Persistence**: All URLs stored in database
+- **Scaling**: Ready for horizontal scaling with proper migration handling
 
 ### Production Upgrades
 
-#### 1. Add Redis for Persistence
+#### 1. Add Redis for Caching
 ```bash
 # In Railway Dashboard
-# Add Redis plugin
-# Update code to use Redis instead of Map
+# Add Redis plugin for caching frequently accessed URLs
+# Reduces database load
 ```
 
-#### 2. Add PostgreSQL for Analytics
-```bash
-# Add PostgreSQL plugin in Railway
-# Store URL metadata, click analytics, etc.
-```
-
-#### 3. Enable Horizontal Scaling
-- Once Redis is added, you can run multiple instances
+#### 2. Enable Horizontal Scaling
+- Set `SKIP_MIGRATIONS=true` for worker instances
+- Run migrations manually before scaling:
+  ```bash
+  railway run npm run migrate:up
+  ```
 - Railway will load balance automatically
+
+#### 3. Database Optimization
+- Monitor query performance in PostgreSQL metrics
+- Add indexes for frequently queried columns
+- Consider read replicas for high traffic
 
 ## 🐛 Troubleshooting
 
@@ -204,12 +243,13 @@ Railway is configured to auto-deploy when you push to `main`:
 ## 📝 Next Steps
 
 1. **Test all endpoints** using the commands above
-2. **Enable feature flags** in Railway variables
-3. **Add custom domain** (optional)
-4. **Set up monitoring** (Sentry, LogDNA, etc.)
-5. **Add Redis** for data persistence
-6. **Configure backups** (once database is added)
-7. **Set up CI/CD** with GitHub Actions
+2. **Verify database migrations** ran successfully (check Railway logs)
+3. **Enable feature flags** in Railway variables
+4. **Add custom domain** (optional)
+5. **Set up monitoring** (Sentry, LogDNA, etc.)
+6. **Add Redis** for caching (optional performance optimization)
+7. **Configure database backups** in Railway PostgreSQL settings
+8. **Set up CI/CD** with GitHub Actions (optional)
 
 ## 🆘 Getting Help
 
