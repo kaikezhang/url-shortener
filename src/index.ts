@@ -2,6 +2,7 @@ import { createApp } from './app';
 import { config, validateConfig } from './utils/config';
 import { logger } from './utils/logger';
 import { runMigrations, testConnection } from './database';
+import { initRedis, closeRedis, testRedisConnection } from './database/redis';
 
 /**
  * Starts the server
@@ -22,6 +23,18 @@ async function startServer(): Promise<void> {
     logger.info('Running database migrations...');
     await runMigrations();
 
+    // Initialize Redis (if caching enabled)
+    if (config.features.caching) {
+      logger.info('Initializing Redis...');
+      initRedis();
+      const redisConnected = await testRedisConnection();
+      if (redisConnected) {
+        logger.info('Redis connection successful');
+      } else {
+        logger.warn('Redis connection failed - continuing without cache');
+      }
+    }
+
     // Create Express app
     const app = createApp();
 
@@ -39,8 +52,14 @@ async function startServer(): Promise<void> {
     });
 
     // Graceful shutdown
-    const shutdown = (): void => {
+    const shutdown = async (): Promise<void> => {
       logger.info('Shutting down gracefully...');
+
+      // Close Redis connection
+      if (config.features.caching) {
+        await closeRedis();
+      }
+
       server.close(() => {
         logger.info('Server closed');
         process.exit(0);

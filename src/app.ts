@@ -1,4 +1,5 @@
 import express, { Application, Request, Response } from 'express';
+import compression from 'compression';
 import { UrlShortenerService } from './services/UrlShortenerService';
 import { createUrlRoutes, createRedirectRoute } from './routes/urlRoutes';
 import { errorHandler, notFoundHandler } from './middleware/errorHandler';
@@ -13,6 +14,7 @@ export function createApp(): Application {
   const app = express();
 
   // Middleware
+  app.use(compression()); // Enable gzip compression
   app.use(express.json());
   app.use(express.urlencoded({ extended: true }));
 

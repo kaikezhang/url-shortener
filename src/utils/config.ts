@@ -17,6 +17,7 @@ export const config = {
     analytics: process.env.ENABLE_ANALYTICS === 'true',
     customCodes: process.env.ENABLE_CUSTOM_CODES === 'true',
     rateLimiting: process.env.ENABLE_RATE_LIMITING === 'true',
+    caching: process.env.ENABLE_CACHING === 'true',
   },
 
   // Rate limiting configuration (if enabled)
@@ -41,6 +42,16 @@ export const config = {
       min: parseInt(process.env.DB_POOL_MIN || '2', 10),
       max: parseInt(process.env.DB_POOL_MAX || '10', 10),
     },
+  },
+
+  // Redis configuration (for caching)
+  redis: {
+    url: process.env.REDIS_URL,
+    host: process.env.REDIS_HOST || 'localhost',
+    port: parseInt(process.env.REDIS_PORT || '6379', 10),
+    password: process.env.REDIS_PASSWORD,
+    ttl: parseInt(process.env.REDIS_TTL || '3600', 10), // 1 hour default
+    keyPrefix: process.env.REDIS_KEY_PREFIX || 'urlshort:',
   },
 } as const;
 
